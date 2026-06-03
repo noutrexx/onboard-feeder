@@ -11,6 +11,7 @@ from html import escape
 from config import load_settings
 from models import FeedItem, HealthResponse
 from services.collector import FeedCollector
+from services.alert_client import push_items_to_alert
 from storage.repository import FeedRepository
 
 
@@ -264,6 +265,7 @@ def dashboard() -> str:
               <a href="/api/health">Health JSON</a>
               <a href="/api/feeds?limit=20">Feeds JSON</a>
               <a href="/api/feeds?limit=20&location_only=true">Konumlu Feeds JSON</a>
+              <a href="/api/integrations/onboard-alert/push?limit=20">Push to Alert</a>
               <a href="/docs">API Docs</a>
             </div>
           </section>
@@ -305,3 +307,19 @@ def refresh_feeds(_: None = Depends(require_admin_api_key)) -> dict[str, int]:
 @app.get("/api/sources/status")
 def source_status() -> list[dict[str, object]]:
     return repository.list_source_status()
+
+
+@app.post("/api/integrations/onboard-alert/push")
+def push_to_onboard_alert(
+    _: None = Depends(require_admin_api_key),
+    limit: int = Query(default=50, ge=1, le=200),
+    location_only: bool = Query(default=False),
+) -> dict[str, object]:
+    items = repository.list_recent(limit=limit, location_only=location_only)
+    result = push_items_to_alert(items, settings.alert_integration)
+    return {
+        "attempted": result.attempted,
+        "pushed": result.pushed,
+        "failed": result.failed,
+        "errors": result.errors,
+    }

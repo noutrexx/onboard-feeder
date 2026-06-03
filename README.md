@@ -42,6 +42,10 @@ The service is designed as an ingestion layer, not a full article mirror. It kee
 
 ![Source Status](docs/screenshots/source-status.png)
 
+### Integrated Alert Map
+
+![Alert Map](assets/screenshots/alert-map.png)
+
 ---
 
 ## Features
@@ -57,6 +61,8 @@ The service is designed as an ingestion layer, not a full article mirror. It kee
 - `location_only=true` feed filtering
 - Source health tracking for RSS and mock Twitter/X targets
 - Protected manual refresh endpoint via `x-api-key`
+- HMAC-signed webhook push into `onboard-alert`
+- Manual integration push endpoint for operational control
 - CORS support for the Onboard Alert frontend
 - FastAPI Swagger documentation
 
@@ -83,6 +89,9 @@ services/
    v
 storage/
    |-- repository.py         SQLite persistence and source health state
+   |
+   v
+services/alert_client.py     Signed webhook delivery into onboard-alert
    |
    v
 main.py                     FastAPI app, dashboard, REST endpoints
@@ -134,6 +143,14 @@ All feed targets are configured in `config.json`.
     "request_timeout_seconds": 12,
     "user_agent": "onboard-feeder/1.0"
   },
+  "alert_integration": {
+    "enabled": true,
+    "api_url": "http://127.0.0.1:4000",
+    "bot_ingest_api_key": "change-this-bot-key",
+    "bot_ingest_hmac_secret": "change-this-long-hmac-secret-please",
+    "push_after_collect": false,
+    "min_confidence": 0.55
+  },
   "twitter": {
     "enabled": true,
     "mock_mode": true,
@@ -166,6 +183,7 @@ All feed targets are configured in `config.json`.
 | `GET` | `/api/feeds?location_only=true` | Feed items with detected locations |
 | `GET` | `/api/sources/status` | Per-source health state |
 | `POST` | `/api/feeds/refresh` | Manually trigger collection, protected by `x-api-key` |
+| `POST` | `/api/integrations/onboard-alert/push` | Push collected items into Onboard Alert |
 | `GET` | `/docs` | FastAPI Swagger documentation |
 
 Manual refresh example:
@@ -174,6 +192,40 @@ Manual refresh example:
 curl -X POST "http://127.0.0.1:8001/api/feeds/refresh" \
   -H "x-api-key: change-this-feeder-admin-key"
 ```
+
+Push latest feeder items into Onboard Alert:
+
+```bash
+curl -X POST "http://127.0.0.1:8001/api/integrations/onboard-alert/push?limit=50" \
+  -H "x-api-key: change-this-feeder-admin-key"
+```
+
+---
+
+## Bi-Directional Integration With Onboard Alert
+
+The integration uses a REST webhook flow:
+
+```text
+External RSS/X targets
+  -> onboard-feeder collectors
+  -> normalized FeedItem records
+  -> HMAC-signed POST /api/webhooks/bot-ingest
+  -> onboard-alert backend triage/publish workflow
+  -> React/Leaflet live map
+```
+
+`onboard-feeder` keeps source health, raw feed state, and source URLs. `onboard-alert` owns editorial state: `published`, `pending_review`, and `pending_location`.
+
+Webhook requests include:
+
+- `x-api-key`
+- `x-timestamp`
+- `x-signature`
+
+The signature is generated with `HMAC-SHA256(timestamp + "." + JSON payload)`.
+
+Onboard Alert deduplicates bot-ingested records by `sourceUrl`, so repeated feeder pushes do not create duplicate map alerts.
 
 ---
 
@@ -240,6 +292,20 @@ Open:
 ```text
 http://127.0.0.1:8001/
 http://127.0.0.1:8001/docs
+```
+
+Run the integrated local stack from this repository, assuming `onboard-alert` is a sibling directory:
+
+```powershell
+.\scripts\start-integrated.ps1
+```
+
+This starts:
+
+```text
+onboard-feeder       http://127.0.0.1:8001
+onboard-alert API    http://127.0.0.1:4000
+onboard-alert UI     http://127.0.0.1:5173
 ```
 
 ---

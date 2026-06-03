@@ -5,6 +5,7 @@ from models import FeedItemCreate
 from scrapers.news_scraper import scrape_rss_targets
 from scrapers.twitter_scraper import scrape_twitter_targets
 from services.location_extractor import enrich_items_location
+from services.alert_client import push_items_to_alert
 from storage.repository import FeedRepository
 
 
@@ -16,7 +17,12 @@ class FeedCollector:
     def collect_once(self) -> dict[str, int]:
         items = self.collect_items()
         inserted = self.repository.upsert_many(items)
-        return {"collected": len(items), "inserted": inserted}
+        result = {"collected": len(items), "inserted": inserted}
+        if self.settings.alert_integration.push_after_collect:
+            recent = self.repository.list_recent(limit=len(items))
+            push = push_items_to_alert(recent, self.settings.alert_integration)
+            result.update({"pushed": push.pushed, "push_failed": push.failed})
+        return result
 
     def collect_items(self) -> list[FeedItemCreate]:
         items: list[FeedItemCreate] = []

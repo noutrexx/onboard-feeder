@@ -54,7 +54,9 @@ class Settings(BaseModel):
 @lru_cache(maxsize=1)
 def load_settings() -> Settings:
     if not CONFIG_PATH.exists():
-        raise FileNotFoundError(f"Missing config file: {CONFIG_PATH}")
+        raise FileNotFoundError(
+            f"Missing config file: {CONFIG_PATH}. Copy config.example.json to config.json first."
+        )
 
     with CONFIG_PATH.open("r", encoding="utf-8") as config_file:
         raw_config = json.load(config_file)

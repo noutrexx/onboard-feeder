@@ -18,7 +18,7 @@
 
 Onboard Feeder is a lightweight Python microservice that collects external news signals and exposes them as a clean REST API for the `onboard-alert` map platform.
 
-It reads RSS targets, Twitter/X account placeholders, and hashtag targets from a dynamic `config.json` file, normalizes incoming items into a shared schema, enriches them with location tags when Turkish city names are detected, stores them in SQLite, and serves the latest feed items through FastAPI.
+It reads RSS targets, Twitter/X account placeholders, and hashtag targets from a local `config.json` file, normalizes incoming items into a shared schema, enriches them with location tags when Turkish city names are detected, stores them in SQLite, and serves the latest feed items through FastAPI.
 
 The service is designed as an ingestion layer, not a full article mirror. It keeps short snippets and original source URLs so downstream applications can redirect users to the publisher or embed the original source safely.
 
@@ -50,7 +50,7 @@ The service is designed as an ingestion layer, not a full article mirror. It kee
 
 ## Features
 
-- Dynamic target configuration through `config.json`
+- Dynamic target configuration through a local `config.json`
 - RSS ingestion with `requests`, `feedparser`, and `BeautifulSoup`
 - Twitter/X scraper skeleton with mock account and hashtag signals
 - Pydantic-based feed schema validation
@@ -71,7 +71,7 @@ The service is designed as an ingestion layer, not a full article mirror. It kee
 ## Architecture
 
 ```text
-config.json
+config.example.json -> config.json
    |
    v
 config.py
@@ -103,7 +103,8 @@ main.py                     FastAPI app, dashboard, REST endpoints
 
 ```text
 onboard-feeder/
-  config.json
+  config.example.json
+  config.json              local ignored runtime config
   config.py
   main.py
   models.py
@@ -128,7 +129,17 @@ onboard-feeder/
 
 ## Configuration
 
-All feed targets are configured in `config.json`.
+All feed targets are configured in a local `config.json`. Start by copying the example file:
+
+```bash
+cp config.example.json config.json
+```
+
+On PowerShell:
+
+```powershell
+Copy-Item config.example.json config.json
+```
 
 ```json
 {

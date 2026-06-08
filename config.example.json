@@ -8,13 +8,14 @@
     "database_path": "storage/feeds.db",
     "poll_interval_minutes": 15,
     "request_timeout_seconds": 12,
-    "user_agent": "onboard-feeder/1.0 (+https://github.com/noutrexx/onboard_alert)"
+    "user_agent": "onboard-feeder/1.0 (+https://github.com/noutrexx/onboard-feeder)"
   },
   "alert_integration": {
     "enabled": true,
     "api_url": "http://127.0.0.1:4000",
     "bot_ingest_api_key": "change-this-bot-key",
     "bot_ingest_hmac_secret": "change-this-long-hmac-secret-please",
+    "request_timeout_seconds": 10,
     "push_after_collect": false,
     "min_confidence": 0.55
   },

@@ -21,8 +21,9 @@ class AppConfig(BaseModel):
 class AlertIntegrationConfig(BaseModel):
     enabled: bool = False
     api_url: str = "http://127.0.0.1:4000"
-    bot_ingest_api_key: str | None = None
-    bot_ingest_hmac_secret: str | None = None
+    bot_ingest_api_key: str | None = Field(default=None, min_length=12)
+    bot_ingest_hmac_secret: str | None = Field(default=None, min_length=24)
+    request_timeout_seconds: int = Field(default=10, ge=1, le=120)
     push_after_collect: bool = False
     min_confidence: float = Field(default=0.55, ge=0, le=1)
 

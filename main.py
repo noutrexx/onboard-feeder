@@ -265,7 +265,6 @@ def dashboard() -> str:
               <a href="/api/health">Health JSON</a>
               <a href="/api/feeds?limit=20">Feeds JSON</a>
               <a href="/api/feeds?limit=20&location_only=true">Konumlu Feeds JSON</a>
-              <a href="/api/integrations/onboard-alert/push?limit=20">Push to Alert</a>
               <a href="/docs">API Docs</a>
             </div>
           </section>

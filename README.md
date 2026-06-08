@@ -61,7 +61,8 @@ The service is designed as an ingestion layer, not a full article mirror. It kee
 - `location_only=true` feed filtering
 - Source health tracking for RSS and mock Twitter/X targets
 - Protected manual refresh endpoint via `x-api-key`
-- HMAC-signed webhook push into `onboard-alert`
+- Onboard Alert schema-aligned webhook payloads
+- Exact-body HMAC-SHA256 signing for protected bot ingestion
 - Manual integration push endpoint for operational control
 - CORS support for the Onboard Alert frontend
 - FastAPI Swagger documentation
@@ -113,10 +114,13 @@ onboard-feeder/
     news_scraper.py
     twitter_scraper.py
   services/
+    alert_client.py
     collector.py
     location_extractor.py
   storage/
     repository.py
+  tests/
+    test_alert_client.py
   docs/
     screenshots/
       dashboard.png
@@ -159,6 +163,7 @@ Copy-Item config.example.json config.json
     "api_url": "http://127.0.0.1:4000",
     "bot_ingest_api_key": "change-this-bot-key",
     "bot_ingest_hmac_secret": "change-this-long-hmac-secret-please",
+    "request_timeout_seconds": 10,
     "push_after_collect": false,
     "min_confidence": 0.55
   },
@@ -180,7 +185,9 @@ Copy-Item config.example.json config.json
 }
 ```
 
-> Change `admin_api_key` before using this service outside local development.
+Use the same `bot_ingest_api_key` and `bot_ingest_hmac_secret` values as the Onboard Alert backend's `BOT_INGEST_API_KEY` and `BOT_INGEST_HMAC_SECRET`. `min_confidence` is used as the fallback when a feed item has no extracted location confidence.
+
+> Change `admin_api_key` and all integration secrets before using this service outside local development.
 
 ---
 
@@ -213,7 +220,7 @@ curl -X POST "http://127.0.0.1:8001/api/integrations/onboard-alert/push?limit=50
 
 ---
 
-## Bi-Directional Integration With Onboard Alert
+## Onboard Alert Integration
 
 The integration uses a REST webhook flow:
 
@@ -226,7 +233,11 @@ External RSS/X targets
   -> React/Leaflet live map
 ```
 
-`onboard-feeder` keeps source health, raw feed state, and source URLs. `onboard-alert` owns editorial state: `published`, `pending_review`, and `pending_location`.
+`onboard-feeder` keeps source health, raw feed state, and source URLs. `onboard-alert` owns editorial state:
+
+- Items with no usable coordinates or location text enter `pending_location`.
+- Located items below Onboard Alert's `BOT_AUTO_PUBLISH_CONFIDENCE` enter `pending_review`.
+- Located items at or above that threshold are published.
 
 Webhook requests include:
 
@@ -234,9 +245,9 @@ Webhook requests include:
 - `x-timestamp`
 - `x-signature`
 
-The signature is generated with `HMAC-SHA256(timestamp + "." + JSON payload)`.
+The signature is generated with `HMAC-SHA256(timestamp + "." + exact UTF-8 JSON body)`. The exact signed bytes are sent to Onboard Alert, matching its signature verification behavior.
 
-Onboard Alert deduplicates bot-ingested records by `sourceUrl`, so repeated feeder pushes do not create duplicate map alerts.
+Payloads are normalized to Onboard Alert's bot-ingest contract before delivery: titles are limited to 220 characters, descriptions to 300 characters, and absent locations are omitted instead of sent as invalid `null` text. Onboard Alert deduplicates bot-ingested records by `sourceUrl`, so repeated feeder pushes do not create duplicate map alerts.
 
 ---
 
@@ -292,6 +303,13 @@ Install dependencies:
 pip install -r requirements.txt
 ```
 
+Run checks:
+
+```bash
+python -m unittest discover -v
+python -m compileall -q .
+```
+
 Run the service:
 
 ```bash
@@ -326,6 +344,7 @@ onboard-alert UI     http://127.0.0.1:5173
 This service is intentionally compact, but several operational rules matter:
 
 - Do not expose `/api/feeds/refresh` without a strong API key or gateway policy.
+- Configure the same HMAC secret on both services in production.
 - Replace mock Twitter/X scraping with an official API, approved provider, or compliant data source.
 - Monitor `/api/sources/status` for `error` states and repeated failures.
 - Rotate user agents and polling intervals responsibly.
@@ -339,9 +358,9 @@ This service is intentionally compact, but several operational rules matter:
 
 - PostgreSQL storage adapter
 - Queue-based scraper workers
+- Durable webhook delivery retries
 - Per-source backoff policy
 - Real Twitter/X provider integration
-- Webhook delivery into `onboard-alert`
 - Admin UI for editing `config.json`
 - Better NLP-based event location extraction
 
@@ -349,4 +368,4 @@ This service is intentionally compact, but several operational rules matter:
 
 ## License
 
-This project is prepared as part of the Onboard Alert ecosystem. Add a license file before public production distribution.
+Licensed under the [MIT License](LICENSE).

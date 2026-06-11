@@ -1,5 +1,9 @@
 # Onboard Feeder
 
+<div align="center">
+  <img src="assets/banner.svg" alt="Onboard Feeder" width="100%" />
+</div>
+
 <p align="center">
   <strong>FastAPI-based external feed collector for the Onboard Alert live news and crisis map.</strong>
 </p>
@@ -70,31 +74,19 @@ The service is designed as an ingestion layer, not a full article mirror. It kee
 
 ## Architecture
 
-```text
-config.example.json -> config.json
-   |
-   v
-config.py
-   |
-   v
-scrapers/
-   |-- news_scraper.py       RSS/news ingestion
-   |-- twitter_scraper.py    Twitter/X mock ingestion skeleton
-   |
-   v
-services/
-   |-- collector.py          Runs all scrapers and persists results
-   |-- location_extractor.py Detects Turkish city mentions
-   |
-   v
-storage/
-   |-- repository.py         SQLite persistence and source health state
-   |
-   v
-services/alert_client.py     Signed webhook delivery into onboard-alert
-   |
-   v
-main.py                     FastAPI app, dashboard, REST endpoints
+```mermaid
+flowchart TB
+    CFG[config.json] --> SCR
+    subgraph SCR["scrapers"]
+        NEWS[news_scraper.py<br/>RSS / news ingestion]
+        TW[twitter_scraper.py<br/>X ingestion skeleton]
+    end
+    SCR --> COL[collector.py<br/>run scrapers and persist]
+    COL --> LOC[location_extractor.py<br/>detect Turkish city mentions]
+    LOC --> DB[(SQLite<br/>repository.py)]
+    DB --> AC[alert_client.py<br/>signed webhook]
+    AC --> OA([onboard-alert])
+    DB --> API[main.py<br/>FastAPI · dashboard · REST]
 ```
 
 ---

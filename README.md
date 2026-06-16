@@ -16,6 +16,10 @@
   <img alt="Scheduler" src="https://img.shields.io/badge/APScheduler-background_jobs-111827?style=for-the-badge" />
 </p>
 
+<p align="center">
+  <img src="docs/preview/dashboard.png" alt="Onboard Feeder dashboard" width="100%" />
+</p>
+
 ---
 
 ## Overview
@@ -32,7 +36,10 @@ The service is designed as an ingestion layer, not a full article mirror. It kee
 
 ### Service Dashboard
 
-![Dashboard](docs/screenshots/dashboard.png)
+Modern, rounded glassmorphism dashboard with a live connection badge showing the
+linked `onboard-alert` webhook target and status.
+
+![Dashboard](docs/preview/dashboard.png)
 
 ### FastAPI Documentation
 
@@ -54,6 +61,7 @@ The service is designed as an ingestion layer, not a full article mirror. It kee
 
 ## Features
 
+- Modern rounded glassmorphism dashboard with a live `onboard-alert` connection badge
 - Dynamic target configuration through a local `config.json`
 - RSS ingestion with `requests`, `feedparser`, and `BeautifulSoup`
 - Twitter/X scraper skeleton with mock account and hashtag signals
@@ -110,6 +118,8 @@ onboard-feeder/
   storage/
     repository.py
   docs/
+    preview/
+      dashboard.png         Modern dashboard preview (README)
     screenshots/
       dashboard.png
       api-docs.png

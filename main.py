@@ -118,20 +118,67 @@ def dashboard() -> str:
             padding: 40px 20px;
           }}
           .hero {{
+            position: relative;
             border: 1px solid rgba(255,255,255,0.1);
-            background: rgba(15, 23, 42, 0.72);
+            border-radius: 24px;
+            background:
+              linear-gradient(180deg, rgba(34,211,238,0.06), transparent 160px),
+              rgba(15, 23, 42, 0.72);
             backdrop-filter: blur(16px);
-            padding: 28px;
-            box-shadow: 0 24px 70px rgba(0,0,0,0.35);
+            padding: 30px;
+            box-shadow:
+              0 24px 70px rgba(0,0,0,0.35),
+              inset 0 1px 0 rgba(255,255,255,0.05);
           }}
           .eyebrow {{
-            margin: 0 0 10px;
-            color: #67e8f9;
-            font-size: 12px;
-            font-weight: 800;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin: 0 0 16px;
+            border: 1px solid rgba(103,232,249,0.25);
+            background: rgba(103,232,249,0.1);
+            border-radius: 9999px;
+            padding: 6px 13px;
+            color: #a5f3fc;
+            font-size: 11px;
+            font-weight: 700;
             letter-spacing: 0.22em;
             text-transform: uppercase;
           }}
+          .eyebrow::before {{
+            content: "";
+            width: 7px;
+            height: 7px;
+            border-radius: 9999px;
+            background: #67e8f9;
+            box-shadow: 0 0 0 4px rgba(103,232,249,0.18);
+          }}
+          .connection {{
+            display: inline-flex;
+            align-items: center;
+            gap: 9px;
+            margin-top: 18px;
+            border: 1px solid rgba(16,185,129,0.3);
+            background: rgba(16,185,129,0.1);
+            border-radius: 9999px;
+            padding: 8px 14px;
+            color: #a7f3d0;
+            font-size: 12px;
+            font-weight: 700;
+          }}
+          .connection .dot {{
+            width: 7px;
+            height: 7px;
+            border-radius: 9999px;
+            background: #34d399;
+            box-shadow: 0 0 0 4px rgba(52,211,153,0.18);
+          }}
+          .connection.off {{
+            border-color: rgba(148,163,184,0.25);
+            background: rgba(148,163,184,0.08);
+            color: #94a3b8;
+          }}
+          .connection.off .dot {{ background: #94a3b8; box-shadow: 0 0 0 4px rgba(148,163,184,0.16); }}
           h1 {{
             margin: 0;
             font-size: clamp(32px, 5vw, 58px);
@@ -152,8 +199,9 @@ def dashboard() -> str:
           }}
           .stat {{
             border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 16px;
             background: rgba(255,255,255,0.045);
-            padding: 14px;
+            padding: 16px;
           }}
           .stat strong {{
             display: block;
@@ -173,12 +221,19 @@ def dashboard() -> str:
           }}
           .actions a {{
             border: 1px solid rgba(103,232,249,0.35);
+            border-radius: 9999px;
             background: rgba(103,232,249,0.1);
             color: #cffafe;
-            padding: 11px 14px;
+            padding: 11px 16px;
             font-size: 14px;
-            font-weight: 800;
+            font-weight: 700;
             text-decoration: none;
+            transition: background 0.18s ease, border-color 0.18s ease, transform 0.18s ease;
+          }}
+          .actions a:hover {{
+            background: rgba(103,232,249,0.18);
+            border-color: rgba(103,232,249,0.6);
+            transform: translateY(-1px);
           }}
           .section-title {{
             margin: 30px 0 14px;
@@ -192,18 +247,26 @@ def dashboard() -> str:
           }}
           .card, .empty {{
             border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 18px;
             background: rgba(15, 23, 42, 0.68);
-            padding: 16px;
+            padding: 18px;
+            transition: border-color 0.18s ease, background 0.18s ease, transform 0.18s ease;
+          }}
+          .card:hover {{
+            border-color: rgba(103,232,249,0.4);
+            background: rgba(15, 23, 42, 0.82);
+            transform: translateY(-2px);
           }}
           .location-pill {{
             display: inline-flex;
             margin-top: 12px;
             border: 1px solid rgba(16,185,129,0.35);
+            border-radius: 9999px;
             background: rgba(16,185,129,0.12);
             color: #a7f3d0;
-            padding: 5px 8px;
+            padding: 5px 10px;
             font-size: 11px;
-            font-weight: 900;
+            font-weight: 800;
             text-transform: uppercase;
           }}
           .location-pill.muted {{
@@ -255,6 +318,10 @@ def dashboard() -> str:
               standart feed modeline dönüştürülür, SQLite içine kaydedilir ve REST API
               üzerinden onboard-alert projesine sunulur.
             </p>
+            <div class="connection{'' if settings.alert_integration.enabled else ' off'}">
+              <span class="dot"></span>
+              onboard-alert webhook · {escape(settings.alert_integration.api_url)} · {'aktif' if settings.alert_integration.enabled else 'pasif'}
+            </div>
             <div class="stats">
               <div class="stat"><strong>{repository.count()}</strong><span>Kayıt</span></div>
               <div class="stat"><strong>{repository.count_located()}</strong><span>Konumlu kayıt</span></div>
